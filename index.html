@@ -1,0 +1,320 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Chatbot</title>
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --bg-light: #f2f2f2;
+      --text-dark: #ffffff;
+      --text-light: #000000;
+      --bot-dark: #007acc;
+      --bot-light: #d0e7ff;
+      --user-dark: #3a3a3a;
+      --user-light: #ccc;
+    }body {
+  font-family: Arial, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+.chat-container {
+  width: 95%;
+  max-width: 550px;
+  background: #1f1f1f;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 10px #000;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #2a2a2a;
+  border-bottom: 1px solid #444;
+}
+
+.top-bar button {
+  background: #444;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.chat-box {
+  height: 420px;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  padding: 10px 15px;
+  border-radius: 20px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.user {
+  background-color: var(--user-dark);
+  align-self: flex-end;
+}
+
+.bot {
+  background-color: var(--bot-dark);
+  align-self: flex-start;
+}
+
+.input-area {
+  display: flex;
+  padding: 10px;
+  background: #2a2a2a;
+  border-top: 1px solid #444;
+  gap: 8px;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  outline: none;
+  border-radius: 20px;
+  background: #444;
+  color: white;
+}
+
+.input-area button {
+  padding: 10px 14px;
+  background: #007acc;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.light-mode {
+  background: var(--bg-light);
+  color: var(--text-light);
+}
+
+.light-mode .chat-container {
+  background: #ffffff;
+}
+
+.light-mode .user {
+  background-color: var(--user-light);
+}
+
+.light-mode .bot {
+  background-color: var(--bot-light);
+}
+
+.light-mode .top-bar,
+.light-mode .input-area {
+  background: #e0e0e0;
+}
+
+.light-mode .input-area input {
+  background: #ccc;
+  color: #000;
+}
+
+.light-mode .top-bar button {
+  background: #bbb;
+  color: #000;
+}
+
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="top-bar">
+      <button onclick="toggleMode()">🌙/☀️</button>
+      <button onclick="clearChat()">🗑 Clear</button>
+      <button onclick="startListening()">🎤</button>
+    </div>
+    <div id="chat-box" class="chat-box"></div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Ask me anything..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>  <script>
+    const chatBox = document.getElementById("chat-box");
+    const inputField = document.getElementById("user-input");
+    const body = document.body;
+
+    let isLight = false;
+    let userName = localStorage.getItem("chatbotName") || null;
+    let userColor = localStorage.getItem("chatColor") || null;
+    let userCity = localStorage.getItem("chatCity") || null;
+
+    window.onload = () => {
+      const saved = localStorage.getItem("chat");
+      if (saved) chatBox.innerHTML = saved;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    };
+
+    function toggleMode() {
+      isLight = !isLight;
+      body.classList.toggle("light-mode");
+    }
+
+    function clearChat() {
+      chatBox.innerHTML = "";
+      localStorage.removeItem("chat");
+    }
+
+    function sendMessage() {
+      const userText = inputField.value.trim();
+      if (userText === "") return;
+      addMessage(userText, "user");
+      inputField.value = "";
+      const botReply = getBotReply(userText);
+      if (typeof botReply === "string") setTimeout(() => addMessage(botReply, "bot"), 500);
+    }
+
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.classList.add("message", sender);
+
+      if (sender === "bot") {
+        let i = 0;
+        const typing = setInterval(() => {
+          message.innerText = text.slice(0, i++);
+          chatBox.appendChild(message);
+          chatBox.scrollTop = chatBox.scrollHeight;
+          if (i > text.length) {
+            clearInterval(typing);
+            localStorage.setItem("chat", chatBox.innerHTML);
+          }
+        }, 25);
+      } else {
+        message.innerText = text;
+        chatBox.appendChild(message);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        localStorage.setItem("chat", chatBox.innerHTML);
+      }
+    }
+
+    function getBotReply(input) {
+      const text = input.toLowerCase();
+
+      if (text.includes("my name is") || text.includes("call me")) {
+        const nameMatch = input.match(/(?:my name is|call me)\s+([a-zA-Z]+)/i);
+        if (nameMatch) {
+          userName = nameMatch[1];
+          localStorage.setItem("chatbotName", userName);
+          return `Nice to meet you, ${userName}! 😊`;
+        }
+      }
+
+      if (text.includes("what is my name")) {
+        return userName ? `Your name is ${userName}.` : "I don't know your name yet.";
+      }
+
+      if (text.includes("my favorite color is")) {
+        const match = input.match(/my favorite color is (.+)/i);
+        if (match) {
+          userColor = match[1];
+          localStorage.setItem("chatColor", userColor);
+          return `Got it! Your favorite color is ${userColor}.`;
+        }
+      }
+
+      if (text.includes("what is my favorite color")) {
+        return userColor ? `Your favorite color is ${userColor}.` : "You haven't told me your favorite color.";
+      }
+
+      if (text.includes("i live in")) {
+        const match = input.match(/i live in (.+)/i);
+        if (match) {
+          userCity = match[1];
+          localStorage.setItem("chatCity", userCity);
+          return `Cool, you're from ${userCity}.`;
+        }
+      }
+
+      if (text.includes("where do i live")) {
+        return userCity ? `You live in ${userCity}.` : "I don't know where you live yet.";
+      }
+
+      if (text.includes("motivate") || text.includes("quote") || text.includes("inspire")) {
+        const quotes = [
+          "Believe in yourself and all that you are.",
+          "You are capable of amazing things.",
+          "Every day is a second chance.",
+          "Keep going. You're closer than you think!",
+          "Dream big. Work hard. Stay focused."
+        ];
+        return quotes[Math.floor(Math.random() * quotes.length)];
+      }
+
+      if (text.startsWith("who is") || text.startsWith("what is")) {
+        const topic = input.replace(/(who is|what is)/i, "").trim();
+        if (topic) {
+          fetchWikipedia(topic);
+          return "Searching Wikipedia... 📚";
+        }
+      }
+
+      if (text.includes("time")) return new Date().toLocaleTimeString();
+      if (text.includes("date")) return new Date().toLocaleDateString();
+      try {
+        if (/^\d+ *[\+\-\*\/] *\d+/.test(text)) return `${input} = ${eval(input)}`;
+      } catch {}
+
+      if (text.includes("hello") || text.includes("hi")) {
+        return userName ? `Hello again, ${userName}! 👋` : `Hello! What's your name? 😊`;
+      }
+
+      if (text.includes("bye")) return `Bye ${userName || "friend"}! 👋`;
+
+      return "I'm not sure how to respond. Try asking something else!";
+    }
+
+    function fetchWikipedia(query) {
+      const apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (data.extract) {
+            addMessage(data.extract, "bot");
+          } else {
+            addMessage("Sorry, I couldn't find that on Wikipedia.", "bot");
+          }
+        })
+        .catch(() => {
+          addMessage("Error reaching Wikipedia. Try again later.", "bot");
+        });
+    }
+
+    function startListening() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("Speech recognition not supported in your browser.");
+        return;
+      }
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.start();
+      recognition.onresult = function (event) {
+        const voiceText = event.results[0][0].transcript;
+        inputField.value = voiceText;
+        sendMessage();
+      };
+    }
+  </script></body>
+</html>
